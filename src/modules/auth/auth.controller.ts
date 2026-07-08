@@ -6,21 +6,14 @@ const signUp = async (req: Request, res: Response) => {
   try {
     const result = await authServices.signUp(req.body);
 
-    if (result === null) {
-      sendResponse(res, {
-        status: 404,
-        success: false,
-        message: "User not found!",
-      });
-    } else {
-      const {password, ...userWithoutPassword} = result.rows[0]
-      sendResponse(res, {
-        status: 201,
-        success: true,
-        message: "User registered successfully",
-        data: userWithoutPassword,
-      });
-    }
+    const { password, ...userWithoutPassword } = result.rows[0];
+    
+    sendResponse(res, {
+      status: 201,
+      success: true,
+      message: "User registered successfully",
+      data: userWithoutPassword,
+    });
   } catch (err: any) {
     sendResponse(res, {
       status: 500,
