@@ -33,19 +33,14 @@ const updateVechicle = async (id: string, payload: Record<string, unknown>) => {
   const keys = Object.keys(payload);
 
   if (keys.length === 0) {
-    return null
+    return null;
   }
 
   const setClause = keys.map((key, idx) => `${key} = $${idx + 1}`).join(", ");
 
   const values = [...Object.values(payload), id];
 
-  const query = `
-    UPDATE vehicles
-    SET ${setClause}
-    WHERE id = $${values.length}
-    RETURNING *;
-  `;
+  const query = `UPDATE vehicles SET ${setClause} WHERE id = $${values.length} RETURNING *`;
 
   return await pool.query(query, values);
 };

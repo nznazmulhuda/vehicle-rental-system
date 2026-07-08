@@ -89,7 +89,7 @@ const updateVechicle = async (req: Request, res: Response) => {
       status: 200,
       success: true,
       message: "Vehicle updated successfully",
-      data: result.rows[0],
+      data: result.rows,
     });
   } catch (err: any) {
     sendResponse(res, {
