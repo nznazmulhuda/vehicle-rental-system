@@ -40,7 +40,7 @@ export default async function initDB() {
       rent_start_date DATE NOT NULL,
       rent_end_date DATE NOT NULL,
       total_price DECIMAL(10) NOT NULL CHECK (total_price > 0),
-      status VARCHAR(20) NOT NULL CHECK (status IN ('active', 'cancelled', 'returned')),
+      status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'cancelled', 'returned')),
       CHECK (rent_end_date > rent_start_date)
     );
   `)

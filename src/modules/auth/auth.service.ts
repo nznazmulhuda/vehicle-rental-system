@@ -42,6 +42,7 @@ const signIn = async (payload: Record<string, unknown>) => {
   //? generate jwt token
   const token = jwt.sign(
     {
+      id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
