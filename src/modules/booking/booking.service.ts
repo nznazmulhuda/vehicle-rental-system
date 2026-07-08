@@ -67,6 +67,25 @@ const createBooking = async (payload: Record<string, unknown>) => {
 };
 
 const getBookings = async () => {
+  await pool.query(`
+    UPDATE bookings
+    SET status = 'returned'
+    WHERE status = 'active'
+      AND rent_end_date < CURRENT_DATE
+    RETURNING vehicle_id
+  `);
+
+  await pool.query(`
+    UPDATE vehicles
+    SET availability_status = 'available'
+    WHERE id IN (
+        SELECT vehicle_id
+        FROM bookings
+        WHERE status = 'returned'
+          AND rent_end_date < CURRENT_DATE
+    )
+  `);
+
   return await pool.query(`
     SELECT
       b.id,
@@ -96,6 +115,25 @@ const getBookings = async () => {
 };
 
 const getBooking = async (id: string) => {
+  await pool.query(`
+    UPDATE bookings
+    SET status = 'returned'
+    WHERE status = 'active'
+      AND rent_end_date < CURRENT_DATE
+    RETURNING vehicle_id
+  `);
+
+  await pool.query(`
+    UPDATE vehicles
+    SET availability_status = 'available'
+    WHERE id IN (
+        SELECT vehicle_id
+        FROM bookings
+        WHERE status = 'returned'
+          AND rent_end_date < CURRENT_DATE
+    )
+  `);
+
   return await pool.query(
     `
     SELECT
@@ -182,5 +220,5 @@ export const bookingServices = {
   createBooking,
   getBookings,
   getBooking,
-  updateBookingStatus
+  updateBookingStatus,
 };
