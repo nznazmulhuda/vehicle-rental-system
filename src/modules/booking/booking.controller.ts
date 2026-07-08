@@ -25,7 +25,6 @@ const createBooking = async (req: Request, res: Response) => {
 const getBookings = async (req: Request, res: Response) => {
   const currentUser = req.user as JwtPayload;
 
-
   try {
     if (currentUser.role === "admin") {
       const results = await bookingServices.getBookings();
@@ -46,10 +45,47 @@ const getBookings = async (req: Request, res: Response) => {
         data: result.rows[0],
       });
     }
-  } catch (err) {}
+  } catch (err: any) {
+    sendResponse(res, {
+      status: 500,
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+const updateBookingStatus = async (req: Request, res: Response) => {
+  const { role } = req.user as JwtPayload;
+  const { status } = req.body;
+  const { bookingId } = req.params;
+
+  try {
+    const data = await bookingServices.updateBookingStatus(
+      role,
+      status,
+      bookingId as string,
+    );
+
+    sendResponse(res, {
+      status: 200,
+      success: true,
+      message:
+        role === "admin"
+          ? "Booking marked as returned. Vehicle is now available"
+          : "Booking cancelled successfully",
+      data,
+    });
+  } catch (err: any) {
+    sendResponse(res, {
+      status: 500,
+      success: false,
+      message: err.message,
+    });
+  }
 };
 
 export const bookingController = {
   createBooking,
   getBookings,
+  updateBookingStatus
 };

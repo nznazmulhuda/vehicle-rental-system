@@ -67,7 +67,6 @@ const createBooking = async (payload: Record<string, unknown>) => {
 };
 
 const getBookings = async () => {
-
   return await pool.query(`
     SELECT
       b.id,
@@ -93,11 +92,12 @@ const getBookings = async () => {
     ON b.customer_id = u.id
     JOIN vehicles v
     ON b.vehicle_id = v.id
-  `)
-}
+  `);
+};
 
-const getBooking = async (id:string) => {
-  return await pool.query(`
+const getBooking = async (id: string) => {
+  return await pool.query(
+    `
     SELECT
       b.id,
       b.vehicle_id,
@@ -117,11 +117,70 @@ const getBooking = async (id:string) => {
     ON b.vehicle_id = v.id
 
     WHERE b.customer_id = $1
-  `, [id])
-}
+  `,
+    [id],
+  );
+};
+
+const updateBookingStatus = async (
+  role: "admin" | "customer",
+  status: "returned" | "cancelled",
+  bookingId: string,
+) => {
+  const allowedStatus = {
+    admin: "returned",
+    customer: "cancelled",
+  } as const;
+
+  if (allowedStatus[role] !== status) {
+    throw new Error("You are not authorized");
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query(`BEGIN`);
+
+    const booking = await client.query(
+      `UPDATE bookings SET status=$1 WHERE id = $2 AND status = 'active' RETURNING *`,
+      [allowedStatus[role], bookingId],
+    );
+
+    if (booking.rows.length === 0) {
+      throw new Error("Booking not found.");
+    }
+
+    const vehicle = await client.query(
+      `UPDATE vehicles SET availability_status = 'available' WHERE id = $1 RETURNING availability_status`,
+      [booking.rows[0].vehicle_id],
+    );
+
+    await client.query(`COMMIT`);
+
+    const updatedBooking = booking.rows[0];
+
+    const data =
+      role === "admin"
+        ? {
+            ...updatedBooking,
+            vehicle: {
+              availability_status: vehicle.rows[0].availability_status,
+            },
+          }
+        : { ...updatedBooking };
+
+    return data;
+  } catch (err) {
+    await client.query(`ROLLBACK`);
+    throw err;
+  } finally {
+    client.release();
+  }
+};
 
 export const bookingServices = {
   createBooking,
   getBookings,
-  getBooking
-}
+  getBooking,
+  updateBookingStatus
+};
